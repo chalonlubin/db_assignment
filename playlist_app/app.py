@@ -44,7 +44,9 @@ def show_all_playlists():
 def show_playlist(playlist_id):
     """Show detail on specific playlist."""
 
-    # ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
+    playlist = Playlist.query.get_or_404(playlist_id)
+
+    return render_template("playlist.html", playlist=playlist)
 
 
 @app.route("/playlists/add", methods=["GET", "POST"])
@@ -55,7 +57,20 @@ def add_playlist():
     - if valid: add playlist to SQLA and redirect to list-of-playlists
     """
 
-    # ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
+    form = PlaylistForm()
+
+    if form.validate_on_submit():
+        new_playlist = Playlist(
+            name=form.name.data,
+            description=form.description.data
+        )
+        db.session.add(new_playlist)
+        db.session.commit()
+
+        return redirect("/playlists")
+
+    else:
+        return render_template("new_playlist.html", form=form)
 
 
 ##############################################################################
@@ -74,7 +89,9 @@ def show_all_songs():
 def show_song(song_id):
     """return a specific song"""
 
-    # ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
+    song = Song.query.get_or_404(song_id)
+
+    return render_template("song.html", song=song)
 
 
 @app.route("/songs/add", methods=["GET", "POST"])
@@ -85,27 +102,45 @@ def add_song():
     - if valid: add playlist to SQLA and redirect to list-of-songs
     """
 
-    # ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
+    form = SongForm()
+
+    if form.validate_on_submit():
+        new_song = Song(
+            title=form.title.data,
+            artist=form.artist.data
+        )
+        db.session.add(new_song)
+        db.session.commit()
+
+        return redirect("/songs")
+
+    else:
+        return render_template("new_song.html", form=form)
 
 
 @app.route("/playlists/<int:playlist_id>/add-song", methods=["GET", "POST"])
 def add_song_to_playlist(playlist_id):
     """Add a playlist and redirect to list."""
 
-    # ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
-
-    # THE SOLUTION TO THIS IS IN A HINT IN THE ASSESSMENT INSTRUCTIONS
-
-    playlist = ____
+    playlist = Playlist.query.get_or_404(playlist_id)
     form = NewSongForPlaylistForm()
 
-    # Restrict form to songs not already on this playlist
+    on_playlist = [s.id for s in playlist.songs]
+    off_playlist = [
+        (s.id, s.title) for s in Song.query
+        .filter(Song.id.not_in(on_playlist))
+        .all()]
 
-    curr_on_playlist = ...
-    form.song.choices = ...
+    # populate choice field
+    form.song.choices = off_playlist
 
     if form.validate_on_submit():
-        # ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
+        new_playlist_song = PlaylistSong(
+            playlist_id=playlist_id,
+            song_id=form.song.data
+        )
+        db.session.add(new_playlist_song)
+        db.session.commit()
 
         return redirect(f"/playlists/{playlist_id}")
 
