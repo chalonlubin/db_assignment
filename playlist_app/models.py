@@ -20,7 +20,6 @@ class Playlist(db.Model):
         nullable=False)
     description = db.Column(
         db.Text,
-        nullable=False,
         default="")
 
     songs = db.relationship(
@@ -46,7 +45,6 @@ class Song(db.Model):
         db.Text,
         nullable=False)
     UniqueConstraint(title, artist)
-    # Backreference here did not work.
 
     def __repr__(self):
         return f"<User {self.title} {self.artist} id={self.id}>"

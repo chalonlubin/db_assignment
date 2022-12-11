@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template
+from flask import Flask, redirect, render_template, flash
 from flask_debugtoolbar import DebugToolbarExtension
 
 from models import db, connect_db, Playlist, Song, PlaylistSong
@@ -67,6 +67,7 @@ def add_playlist():
         db.session.add(new_playlist)
         db.session.commit()
 
+        flash(f'Added {new_playlist.name} successfully', 'success')
         return redirect("/playlists")
 
     else:
@@ -104,16 +105,28 @@ def add_song():
 
     form = SongForm()
 
+
     if form.validate_on_submit():
-        new_song = Song(
-            title=form.title.data,
-            artist=form.artist.data
-        )
-        db.session.add(new_song)
-        db.session.commit()
 
-        return redirect("/songs")
+        # gather current songs: (title, artist)
+        cur_songs = [(song.title, song.artist) for song in Song.query.all()]
 
+        # check for duplicates
+        if (form.title.data, form.artist.data) not in cur_songs:
+
+            new_song = Song(
+                title=form.title.data,
+                artist=form.artist.data
+                )
+
+            db.session.add(new_song)
+            db.session.commit()
+            flash(f'Added {new_song.title} by {new_song.artist} successfully', 'success')
+            return redirect("/songs")
+
+        else:
+            flash(f'Song already exists, please enter a new song', 'warning')
+            return render_template("new_song.html", form=form)
     else:
         return render_template("new_song.html", form=form)
 
@@ -141,6 +154,11 @@ def add_song_to_playlist(playlist_id):
         )
         db.session.add(new_playlist_song)
         db.session.commit()
+        flash(f'{Song.query.get(form.song.data).title} by\
+                {Song.query.get(form.song.data).artist}\
+                added successfully','success'
+            )
+
 
         return redirect(f"/playlists/{playlist_id}")
 
